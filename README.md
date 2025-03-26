@@ -26,30 +26,45 @@ pip install -r requirements.txt
 Run the script with a URL:
 
 ```bash
-python mdscraper.py [URL] [OUTPUT_FILE] [--debug]
+# For a single URL
+python mdscraper.py --url [URL] --output [OUTPUT_FILE] [--debug]
+
+# For multiple URLs from a text file
+python mdscraper.py --file [URL_FILE] --outdir [OUTPUT_DIRECTORY] [--debug]
 ```
 
 ### Arguments
 
-- `URL` (optional): The URL of the webpage to fetch and convert. Default is 'https://example.com'.
-- `OUTPUT_FILE` (optional): The name of the output Markdown file. Default is 'output.md'.
+- `--url`: The URL of a single webpage to fetch and convert
+- `--file`: Text file containing URLs (one per line) to fetch and convert
+- `--output` (optional): The name of the output Markdown file when using --url. Default is 'output.md'.
+- `--outdir` (optional): Output directory for markdown files when using --file. Default is 'outs'.
 - `--debug` or `-d` (optional): Enable debug mode for more information.
 
 ### Examples
 
 ```bash
-# Fetch the default URL and save to default output file
-python mdscraper.py
-
 # Fetch a specific URL and save to custom output file
-python mdscraper.py https://example.com/article custom_output.md
+python mdscraper.py --url https://example.com/article --output custom_output.md
 
 # Run with debug mode enabled to get more information
-python mdscraper.py --debug
+python mdscraper.py --url https://example.com/blog/post --debug
 
-# Fetch a specific URL with debug mode enabled
-python mdscraper.py https://example.com/blog/post --debug
+# Process multiple URLs from a text file
+python mdscraper.py --file urls.txt
+
+# Process multiple URLs and save to a custom directory
+python mdscraper.py --file urls.txt --outdir my_markdown_files
 ```
+
+## Multiple URL Processing
+
+When processing multiple URLs from a file:
+
+- Each URL should be on a separate line in the text file
+- The output will be saved in the specified directory (default: 'outs')
+- Each file will be named based on the title of the webpage
+- A summary will be displayed showing the number of successful and failed conversions
 
 ## Features
 
