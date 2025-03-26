@@ -20,7 +20,7 @@ def clean_text(text):
     # Remove leading/trailing whitespace
     return text.strip()
 
-def fetch_and_convert_to_markdown(url, debug=False):
+def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
@@ -94,6 +94,14 @@ def fetch_and_convert_to_markdown(url, debug=False):
             print("Saved HTML to debug_html.html for inspection")
         return None, None
     
+    # If ignore_images is True, remove all img tags before conversion
+    if ignore_images and hasattr(content, 'find_all'):
+        for img in content.find_all('img'):
+            if hasattr(img, 'decompose'):
+                img.decompose()
+        if debug:
+            print("All images have been removed from the content")
+    
     # Convert the content to markdown using markdownify
     markdown_content = md(str(content), heading_style="ATX")
     
@@ -109,7 +117,7 @@ def sanitize_filename(filename):
     # Replace invalid filename characters with underscores
     return re.sub(r'[\\/*?:"<>|]', '_', filename)
 
-def process_url_file(url_file, output_dir="output", debug=False):
+def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -125,7 +133,7 @@ def process_url_file(url_file, output_dir="output", debug=False):
     for i, url in enumerate(urls, 1):
         print(f"\nProcessing URL {i}/{total_urls}: {url}")
         
-        markdown, title = fetch_and_convert_to_markdown(url, debug=debug)
+        markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images)
         if markdown and title:
             # Create a sanitized filename from the title
             filename = sanitize_filename(title)
@@ -166,13 +174,15 @@ def main():
                         help='Output directory for markdown files (used with --file)')
     parser.add_argument('--debug', '-d', action='store_true',
                         help='Enable debug mode for more information')
+    parser.add_argument('--no-images', action='store_true',
+                        help='Ignore all images in the content')
     
     args = parser.parse_args()
     
     if args.url:
         # Process a single URL
         print(f"Fetching and parsing {args.url}...")
-        markdown, title = fetch_and_convert_to_markdown(args.url, debug=args.debug)
+        markdown, title = fetch_and_convert_to_markdown(args.url, debug=args.debug, ignore_images=args.no_images)
         if markdown:
             # Save to file
             with open(args.output, 'w', encoding='utf-8') as f:
@@ -195,7 +205,7 @@ def main():
     
     elif args.file:
         # Process multiple URLs from a file
-        process_url_file(args.file, output_dir=args.outdir, debug=args.debug)
+        process_url_file(args.file, output_dir=args.outdir, debug=args.debug, ignore_images=args.no_images)
 
 if __name__ == "__main__":
     main() 

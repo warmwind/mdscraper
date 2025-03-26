@@ -27,10 +27,10 @@ Run the script with a URL:
 
 ```bash
 # For a single URL
-python mdscraper.py --url [URL] --output [OUTPUT_FILE] [--debug]
+python mdscraper.py --url [URL] --output [OUTPUT_FILE] [--debug] [--no-images]
 
 # For multiple URLs from a text file
-python mdscraper.py --file [URL_FILE] --outdir [OUTPUT_DIRECTORY] [--debug]
+python mdscraper.py --file [URL_FILE] --outdir [OUTPUT_DIRECTORY] [--debug] [--no-images]
 ```
 
 ### Arguments
@@ -40,6 +40,7 @@ python mdscraper.py --file [URL_FILE] --outdir [OUTPUT_DIRECTORY] [--debug]
 - `--output` (optional): The name of the output Markdown file when using --url. Default is 'output.md'.
 - `--outdir` (optional): Output directory for markdown files when using --file. Default is 'outs'.
 - `--debug` or `-d` (optional): Enable debug mode for more information.
+- `--no-images` (optional): Ignore all images in the content and exclude them from the markdown output.
 
 ### Examples
 
@@ -55,6 +56,9 @@ python mdscraper.py --file urls.txt
 
 # Process multiple URLs and save to a custom directory
 python mdscraper.py --file urls.txt --outdir my_markdown_files
+
+# Process a URL without including any images
+python mdscraper.py --url https://example.com/article --no-images
 ```
 
 ## Multiple URL Processing
