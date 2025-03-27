@@ -9,7 +9,7 @@ import os
 from utils import clean_text, sanitize_filename, save_markdown_to_file
 from bs4.element import Tag, NavigableString
 
-def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False):
+def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_links=False):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
@@ -57,6 +57,17 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False):
                 img.decompose()
         if debug:
             print("All images have been removed from the content")
+    
+    # If ignore_links is True, remove all a tags (links) or replace them with their text content
+    if ignore_links and isinstance(content, Tag):
+        for a in content.find_all('a'):
+            if isinstance(a, Tag):
+                # Replace the link with its text content
+                text_content = a.get_text()
+                new_tag = soup.new_string(text_content)
+                a.replace_with(new_tag)
+        if debug:
+            print("All links have been removed from the content")
     
     # Convert the content to markdown using markdownify
     markdown_content = md(str(content), heading_style="ATX")
@@ -111,7 +122,7 @@ def find_content_container(soup, debug=False):
                 
     return content
 
-def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False):
+def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False, ignore_links=False):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -127,7 +138,7 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
     for i, url in enumerate(urls, 1):
         print(f"\nProcessing URL {i}/{total_urls}: {url}")
         
-        markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images)
+        markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, ignore_links=ignore_links)
         if markdown and title:
             # Create a sanitized filename from the title
             filename = sanitize_filename(title)
@@ -151,9 +162,9 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
     print(f"Success: {success_count}, Failed: {failure_count}")
     print(f"Markdown files saved to the '{output_dir}' directory")
 
-def process_single_url(url, output_file, debug=False, ignore_images=False):
+def process_single_url(url, output_file, debug=False, ignore_images=False, ignore_links=False):
     print(f"Fetching and parsing {url}...")
-    markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images)
+    markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, ignore_links=ignore_links)
     
     if markdown:
         # Save to file

@@ -21,15 +21,17 @@ def main():
                         help='Enable debug mode for more information')
     parser.add_argument('--no-images', action='store_true',
                         help='Ignore all images in the content')
+    parser.add_argument('--no-links', action='store_true',
+                        help='Ignore all links in the content')
     
     args = parser.parse_args()
     
     if args.url:
         # Process a single URL
-        process_single_url(args.url, args.output, debug=args.debug, ignore_images=args.no_images)
+        process_single_url(args.url, args.output, debug=args.debug, ignore_images=args.no_images, ignore_links=args.no_links)
     elif args.file:
         # Process multiple URLs from a file
-        process_url_file(args.file, output_dir=args.outdir, debug=args.debug, ignore_images=args.no_images)
+        process_url_file(args.file, output_dir=args.outdir, debug=args.debug, ignore_images=args.no_images, ignore_links=args.no_links)
 
 if __name__ == "__main__":
     main() 

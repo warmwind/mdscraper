@@ -8,6 +8,7 @@ A tool to fetch webpages and convert their content to Markdown format.
 - Process single URLs or batch process multiple URLs from a file
 - Intelligent content detection for various webpage layouts
 - Option to ignore images in the output
+- Option to ignore links in the output
 - Debug mode for troubleshooting
 
 ## Installation
@@ -46,6 +47,7 @@ python mdscraper.py --file urls.txt --outdir output_directory
 
 - `--debug` or `-d`: Enable debug mode for more information
 - `--no-images`: Ignore all images in the content
+- `--no-links`: Ignore all links in the content
 
 ## License
 
