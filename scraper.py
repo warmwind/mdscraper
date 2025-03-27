@@ -28,6 +28,7 @@ class MdScraper():
         debug = False
         verbose = 0
         no_images = False
+        no_links = False
         outdir = ''
         output = '%TITLE'
         requests_timeout = 60
@@ -192,10 +193,23 @@ class MdScraper():
             return None, None
 
         self.process_exclude_selectors(content)
+        self.remove_links(content)
         self.make_urls_relative(content)
 
         title = self.extract_page_title(soup)
         return self.html_to_markdown(str(content), title), title
+
+    def remove_links(self, content):
+        # If ignore_links is True, remove all a tags (links) or replace them with their text content
+        if self.options['no_links'] and isinstance(content, Tag):
+            for anchor in content.find_all('a'):
+                if isinstance(anchor, Tag):
+                    # Replace the link with its text content
+                    anchor_text = anchor.get_text()
+                    new_tag = BeautifulSoup.new_string(anchor_text)
+                    anchor.replace_with(new_tag)
+            if self.options['debug']:
+                print("All links have been removed from the content")
 
     def process_exclude_selectors(self, content):
         if self.options['exclude_selectors']:

@@ -24,7 +24,9 @@ def main():
     parser.add_argument('--content', '-c', nargs='*',
                         help='Additional list of div id or classes to use as the main content')
     parser.add_argument('--no-images', '-i', action='store_true',
-                        help='Ignore all images in the content')
+                        help='Ignore all images in the content'),
+    parser.add_argument('--no-links', action='store_true',
+                        help='Ignore all links in the content'),
     parser.add_argument('--exclude-pages', '-p', nargs='*',
                         help='Space separated list of page names to ignore, can unix filename pattern matching.')
     parser.add_argument('--exclude-selectors', '-s', nargs='*',
