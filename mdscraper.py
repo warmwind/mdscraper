@@ -23,15 +23,21 @@ def main():
                         help='Ignore all images in the content')
     parser.add_argument('--no-links', action='store_true',
                         help='Ignore all links in the content')
+    parser.add_argument('--extra-heading-space', metavar='LEVELS', type=str, default=None,
+                        help='Add additional newlines before specified heading levels (e.g., "1,2,3" for h1,h2,h3 or "all" for all headings)')
     
     args = parser.parse_args()
     
     if args.url:
         # Process a single URL
-        process_single_url(args.url, args.output, debug=args.debug, ignore_images=args.no_images, ignore_links=args.no_links)
+        process_single_url(args.url, args.output, debug=args.debug, 
+                           ignore_images=args.no_images, ignore_links=args.no_links,
+                           extra_heading_space=args.extra_heading_space)
     elif args.file:
         # Process multiple URLs from a file
-        process_url_file(args.file, output_dir=args.outdir, debug=args.debug, ignore_images=args.no_images, ignore_links=args.no_links)
+        process_url_file(args.file, output_dir=args.outdir, debug=args.debug, 
+                         ignore_images=args.no_images, ignore_links=args.no_links,
+                         extra_heading_space=args.extra_heading_space)
 
 if __name__ == "__main__":
     main() 

@@ -9,7 +9,7 @@ import os
 from utils import clean_text, sanitize_filename, save_markdown_to_file
 from bs4.element import Tag, NavigableString
 
-def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_links=False):
+def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
@@ -75,10 +75,63 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
     # Add the title at the beginning
     markdown = f"# {title}\n\n{markdown_content}"
     
-    # Clean up any multiple consecutive newlines
-    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    # Add additional newlines before markdown headings if enabled
+    if extra_heading_space:
+        markdown = add_newlines_before_headings(markdown, extra_heading_space, debug=debug)
+        # Skip cleaning up consecutive newlines when using extra_heading_space
+    else:
+        # Clean up any multiple consecutive newlines
+        markdown = re.sub(r'\n{3,}', '\n\n', markdown)
     
     return markdown, title
+
+def add_newlines_before_headings(markdown, heading_levels='all', debug=False):
+    """
+    Add additional newlines before markdown heading tags
+    
+    Args:
+        markdown (str): The markdown text to process
+        heading_levels (str): Comma-separated list of heading levels (1-6) or 'all'
+        debug (bool): Whether to print debug information
+    
+    Returns:
+        str: The markdown text with additional newlines before headings
+    """
+    # Parse heading levels
+    if heading_levels == 'all':
+        levels = list(range(1, 7))
+    else:
+        try:
+            levels = [int(level.strip()) for level in heading_levels.split(',') if level.strip()]
+            levels = [level for level in levels if 1 <= level <= 6]
+        except ValueError:
+            levels = list(range(1, 7))
+    
+    if not levels:
+        return markdown
+    
+    if debug:
+        print(f"Debug: Adding extra newlines before heading levels: {levels}")
+    
+    # Process lines
+    lines = markdown.split('\n')
+    result = []
+    
+    for i, line in enumerate(lines):
+        # Check if the line is a heading of interest
+        for level in levels:
+            if line.startswith('#' * level + ' '):
+                if debug:
+                    print(f"Debug: Found h{level} tag: {line[:30]}...")
+                # Add three empty lines before heading (if not first line)
+                if i > 0:
+                    result.extend(['', '', ''])
+                break
+        
+        # Add the current line
+        result.append(line)
+    
+    return '\n'.join(result)
 
 def find_content_container(soup, debug=False):
     content = None
@@ -122,7 +175,7 @@ def find_content_container(soup, debug=False):
                 
     return content
 
-def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False, ignore_links=False):
+def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -138,7 +191,9 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
     for i, url in enumerate(urls, 1):
         print(f"\nProcessing URL {i}/{total_urls}: {url}")
         
-        markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, ignore_links=ignore_links)
+        markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, 
+                                                       ignore_links=ignore_links, 
+                                                       extra_heading_space=extra_heading_space)
         if markdown and title:
             # Create a sanitized filename from the title
             filename = sanitize_filename(title)
@@ -162,9 +217,11 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
     print(f"Success: {success_count}, Failed: {failure_count}")
     print(f"Markdown files saved to the '{output_dir}' directory")
 
-def process_single_url(url, output_file, debug=False, ignore_images=False, ignore_links=False):
+def process_single_url(url, output_file, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
     print(f"Fetching and parsing {url}...")
-    markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, ignore_links=ignore_links)
+    markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, 
+                                                  ignore_links=ignore_links, 
+                                                  extra_heading_space=extra_heading_space)
     
     if markdown:
         # Save to file
