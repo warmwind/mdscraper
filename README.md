@@ -1,16 +1,17 @@
 # MDScraper
 
-A tool to fetch webpages and convert their content to Markdown format.
+A specialized tool for extracting clean, structured content from webpages and converting it to Markdown format. Ideal for preparing web content for LLM embeddings and semantic search applications.
 
 ## Features
 
-- Extract content from webpages and convert to Markdown
+- Clean and normalize web content for optimal LLM processing
+- Extract relevant content while filtering out noise, navigation, ads, and irrelevant elements
+- Transform HTML content into consistent, well-structured Markdown format
 - Process single URLs or batch process multiple URLs from a file
 - Intelligent content detection for various webpage layouts
-- Option to ignore images in the output
-- Option to ignore links in the output
-- Option to add extra spacing before headings for improved readability
-- Debug mode for troubleshooting
+- Options to ignore images and links to reduce token usage in embeddings
+- Option to add extra spacing before headings for improved document structure
+- Debug mode for troubleshooting extraction issues
 
 ## Installation
 
