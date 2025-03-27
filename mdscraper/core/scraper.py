@@ -4,6 +4,7 @@
 # pylint: disable=too-few-public-methods
 # pylint: disable=import-error
 # pylint: disable=wildcard-import
+# pylint: disable=too-many-public-methods
 
 """Tools and CLI handler for fetching webpages and converting them to markdown files"""
 
@@ -19,7 +20,8 @@ from bs4.element import Tag
 
 from markdownify import markdownify as md
 from markdownify import _todict
-from utils import *
+
+from mdscraper.core.utils import *
 
 class MdScraper():
     """A set of tools for fetching webpages and converting them to markdown files"""
@@ -29,6 +31,7 @@ class MdScraper():
         verbose = 0
         no_images = False
         no_links = False
+        extra_heading_space = None
         outdir = ''
         output = '%TITLE'
         requests_timeout = 60
@@ -79,13 +82,16 @@ class MdScraper():
         config_file_options = load_config_file(file_path)
         if isinstance(config_file_options, Mapping):
             # Only use config file options if the current options are set to the default value
-            default_options = _todict(self.DefaultOptions)
+            default_options = self.get_default_options()
             for key in config_file_options:
                 if self.options[key] == default_options[key]:
                     self.options[key] = config_file_options[key]
             self.post_options_update()
         else:
             print('Config file content must be a dictionary')
+
+    def get_default_options(self):
+        return _todict(self.DefaultOptions)
 
     def save_settings(self):
         output_dir = self.options['outdir']
@@ -179,18 +185,20 @@ class MdScraper():
         """Converts html string to markdown with optional new title"""
 
         # Convert the content to markdown using markdownify
-        markdown_content = md(html_str, heading_style="ATX")
+        markdown = md(html_str, heading_style="ATX")
 
         if title:
             # Add the title at the beginning if it doesn't already exist
             title_str = f"# {title}\n\n"
-            if markdown_content.startswith(title_str):
-                markdown = markdown_content
-            else:
-                markdown = title_str + markdown_content
-
-        # Clean up any multiple consecutive newlines
+            if not markdown.startswith(title_str):
+                markdown = title_str + markdown
+            
+        # Clean up consecutive newlines
+        # Always clean up more than 2 consecutive newlines regardless of heading space setting
         markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+        
+        # Remove empty paragraphs (lines that only contain whitespace)
+        markdown = re.sub(r'\n\s*\n\s*\n', '\n\n', markdown)
 
         # Add additional newlines before markdown headings if enabled
         if self.options['extra_heading_space']:
@@ -233,6 +241,11 @@ class MdScraper():
             for img in content.find_all('img'):
                 if isinstance(img, Tag):
                     img.decompose()
+            
+            # Also remove empty paragraph tags that might have contained only images
+            for paragraph in content.find_all('p'):
+                if isinstance(paragraph, Tag) and not paragraph.get_text(strip=True):
+                    paragraph.decompose()
 
             if self.options['debug']:
                 print("All images have been removed from the content")
@@ -260,7 +273,7 @@ class MdScraper():
                 if isinstance(anchor, Tag):
                     # Replace the link with its text content
                     anchor_text = anchor.get_text()
-                    new_tag = BeautifulSoup.new_string(anchor_text)
+                    new_tag = BeautifulSoup().new_string(anchor_text)
                     anchor.replace_with(new_tag)
             if self.options['debug']:
                 print("All links have been removed from the content")
@@ -318,7 +331,7 @@ class MdScraper():
                 print(f"- id: {id_list}")
                 print(f"- class: {class_list}")
 
-            if self.options['content']:
+            if self.options.get('content'):
                 custom_content_names = self.options['content']
                 content = self.find_content_by_div_attr(soup, 'id', custom_content_names)
 

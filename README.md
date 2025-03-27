@@ -15,18 +15,26 @@ A specialized tool for extracting clean, structured content from webpages and co
 
 ## Installation
 
-Clone the repository:
+### Option 1: Install from PyPI
 
+```bash
+uv pip install mdscraper
 ```
+
+### Option 2: Install from source
+
+First, ensure you have UV installed. If not, install it following the [official UV installation guide](https://github.com/astral-sh/uv):
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+Then clone and install the repository:
+
+```bash
 git clone https://github.com/yourusername/mdscraper.git
 cd mdscraper
-```
-
-Install required packages
-
-```
-pip install -r requirements.txt
-
+uv pip install .
 ```
 
 ## Usage
@@ -34,7 +42,7 @@ pip install -r requirements.txt
 ### Process a single URL
 
 ```bash
-python mdscraper.py --url https://example.com --output example.md
+mdscraper --url https://example.com --output example.md
 ```
 
 ### Process multiple URLs from a file
@@ -42,7 +50,7 @@ python mdscraper.py --url https://example.com --output example.md
 Create a text file with one URL per line, then run:
 
 ```bash
-python mdscraper.py --file urls.txt --outdir output_directory
+mdscraper --file urls.txt --outdir output_directory
 ```
 
 ### Additional options
@@ -53,6 +61,28 @@ python mdscraper.py --file urls.txt --outdir output_directory
 - `--extra-heading-space LEVELS`: Add newlines before specific heading levels for better readability. LEVELS can be:
   - `all`: Add spacing to all heading levels (h1-h6)
   - `1,2,3`: Comma-separated list of specific heading levels to apply spacing to
+
+## Development
+
+### Running Tests
+
+To run the test suite, first ensure you have the development dependencies installed:
+
+```bash
+uv pip install -e ".[dev]"
+```
+
+Then run the tests:
+
+```bash
+# Run tests without coverage
+pytest tests/
+
+# Run tests with coverage report
+pytest tests/ --cov
+```
+
+The coverage report will show you which parts of the code are covered by tests and which lines are missing coverage.
 
 ## License
 

@@ -1,8 +1,12 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Command-line interface for MDScraper
+"""
+
 import argparse
-from scraper import scraper_cli
+from mdscraper.core.scraper import scraper_cli
 
 def main():
     parser = argparse.ArgumentParser(description='Fetch webpages and convert them to Markdown format.')
