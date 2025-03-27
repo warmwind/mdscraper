@@ -6,6 +6,15 @@ import html
 import os
 
 def clean_text(text):
+    """
+    Clean and normalize text content.
+    
+    Args:
+        text (str): Text to clean
+        
+    Returns:
+        str: Cleaned text
+    """
     if not text:
         return ""
     # Replace multiple spaces with a single space
@@ -16,10 +25,29 @@ def clean_text(text):
     return text.strip()
 
 def sanitize_filename(filename):
+    """
+    Convert a string into a valid filename by replacing invalid characters.
+    
+    Args:
+        filename (str): Original filename
+        
+    Returns:
+        str: Sanitized filename
+    """
     # Replace invalid filename characters with underscores
     return re.sub(r'[\\/*?:"<>|]', '_', filename)
 
 def save_markdown_to_file(markdown, output_file):
+    """
+    Save markdown content to a file.
+    
+    Args:
+        markdown (str): Markdown content to save
+        output_file (str): Path to the output file
+        
+    Returns:
+        float: Size of the saved file in KB
+    """
     with open(output_file, 'w', encoding='utf-8') as f:
         f.write(markdown)
     

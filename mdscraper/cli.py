@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+Command-line interface for MDScraper
+"""
+
 import argparse
 import sys
-from scraper import process_single_url, process_url_file
+from mdscraper.core.scraper import process_single_url, process_url_file
 
 def main():
     parser = argparse.ArgumentParser(description='Fetch webpages and convert them to Markdown format.')
@@ -30,14 +34,15 @@ def main():
     
     if args.url:
         # Process a single URL
-        process_single_url(args.url, args.output, debug=args.debug, 
-                           ignore_images=args.no_images, ignore_links=args.no_links,
-                           extra_heading_space=args.extra_heading_space)
+        success = process_single_url(args.url, args.output, debug=args.debug, 
+                                   ignore_images=args.no_images, ignore_links=args.no_links,
+                                   extra_heading_space=args.extra_heading_space)
+        sys.exit(0 if success else 1)
     elif args.file:
         # Process multiple URLs from a file
         process_url_file(args.file, output_dir=args.outdir, debug=args.debug, 
-                         ignore_images=args.no_images, ignore_links=args.no_links,
-                         extra_heading_space=args.extra_heading_space)
+                        ignore_images=args.no_images, ignore_links=args.no_links,
+                        extra_heading_space=args.extra_heading_space)
 
 if __name__ == "__main__":
     main() 

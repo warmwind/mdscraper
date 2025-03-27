@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import re
 from markdownify import markdownify as md
 import os
-from utils import clean_text, sanitize_filename, save_markdown_to_file
+from mdscraper.core.utils import clean_text, sanitize_filename, save_markdown_to_file
 from bs4.element import Tag, NavigableString
 
 def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
@@ -55,8 +55,14 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
         for img in content.find_all('img'):
             if isinstance(img, Tag):
                 img.decompose()
+        
+        # Also remove empty paragraph tags that might have contained only images
+        for p in content.find_all('p'):
+            if isinstance(p, Tag) and not p.get_text(strip=True):
+                p.decompose()
+                
         if debug:
-            print("All images have been removed from the content")
+            print("All images and empty paragraphs have been removed from the content")
     
     # If ignore_links is True, remove all a tags (links) or replace them with their text content
     if ignore_links and isinstance(content, Tag):
@@ -75,13 +81,16 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
     # Add the title at the beginning
     markdown = f"# {title}\n\n{markdown_content}"
     
+    # Clean up consecutive newlines
+    # Always clean up more than 2 consecutive newlines regardless of heading space setting
+    markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+    
+    # Remove empty paragraphs (lines that only contain whitespace)
+    markdown = re.sub(r'\n\s*\n\s*\n', '\n\n', markdown)
+    
     # Add additional newlines before markdown headings if enabled
     if extra_heading_space:
         markdown = add_newlines_before_headings(markdown, extra_heading_space, debug=debug)
-        # Skip cleaning up consecutive newlines when using extra_heading_space
-    else:
-        # Clean up any multiple consecutive newlines
-        markdown = re.sub(r'\n{3,}', '\n\n', markdown)
     
     return markdown, title
 
