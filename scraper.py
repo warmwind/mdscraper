@@ -128,6 +128,53 @@ class MdScraper():
 
         return BeautifulSoup(response.text, 'html.parser')
 
+    def add_newlines_before_headings(self, markdown):
+        """
+        Add additional newlines before markdown heading tags
+        
+        Args:
+            markdown (str): The markdown text to process
+        
+        Returns:
+            str: The markdown text with additional newlines before headings
+        """
+        # Parse heading levels
+        heading_levels = self.options['extra_heading_space']
+        if heading_levels == 'all':
+            levels = list(range(1, 7))
+        else:
+            try:
+                levels = [int(level.strip()) for level in heading_levels.split(',') if level.strip()]
+                levels = [level for level in levels if 1 <= level <= 6]
+            except ValueError:
+                levels = list(range(1, 7))
+        
+        if not levels:
+            return markdown
+        
+        if self.options['debug']:
+            print(f"Debug: Adding extra newlines before heading levels: {levels}")
+        
+        # Process lines
+        lines = markdown.split('\n')
+        result = []
+        
+        for i, line in enumerate(lines):
+            # Check if the line is a heading of interest
+            for level in levels:
+                if line.startswith('#' * level + ' '):
+                    if self.options['debug']:
+                        print(f"Debug: Found h{level} tag: {line[:30]}...")
+                    # Add three empty lines before heading (if not first line)
+                    if i > 0:
+                        result.extend(['', '', ''])
+                    break
+            
+            # Add the current line
+            result.append(line)
+        
+        return '\n'.join(result)
+
     def html_to_markdown(self, html_str, title=None):
         """Converts html string to markdown with optional new title"""
 
@@ -144,6 +191,13 @@ class MdScraper():
 
         # Clean up any multiple consecutive newlines
         markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+
+        # Add additional newlines before markdown headings if enabled
+        if self.options['extra_heading_space']:
+            markdown = self.add_newlines_before_headings(markdown)
+        else: # Skip cleaning up consecutive newlines when using extra_heading_space
+            # Clean up any multiple consecutive newlines
+            markdown = re.sub(r'\n{3,}', '\n\n', markdown)
         return markdown
 
     def extract_page_title(self, soup):
