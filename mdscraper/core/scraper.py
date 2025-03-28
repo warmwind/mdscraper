@@ -32,6 +32,7 @@ class MdScraper():
         no_images = False
         no_links = False
         extra_heading_space = None
+        prepend_source_link = False
         outdir = ''
         output = '%TITLE'
         requests_timeout = 60
@@ -181,7 +182,7 @@ class MdScraper():
         
         return '\n'.join(result)
 
-    def html_to_markdown(self, html_str, title=None):
+    def html_to_markdown(self, html_str, title=None, source_url=None):
         """Converts html string to markdown with optional new title"""
 
         # Convert the content to markdown using markdownify
@@ -206,6 +207,10 @@ class MdScraper():
         else: # Skip cleaning up consecutive newlines when using extra_heading_space
             # Clean up any multiple consecutive newlines
             markdown = re.sub(r'\n{3,}', '\n\n', markdown)
+
+        if source_url:
+            markdown = f"Source: <{source_url}>\n\n{markdown}"
+
         return markdown
 
     def extract_page_title(self, soup):
@@ -264,7 +269,13 @@ class MdScraper():
         self.make_urls_relative(content)
 
         title = self.extract_page_title(soup)
-        return self.html_to_markdown(str(content), title), title
+
+        if self.options['prepend_source_link']:
+            markdown = self.html_to_markdown(str(content), title, url)
+        else:
+            markdown = self.html_to_markdown(str(content), title)
+
+        return markdown, title
 
     def remove_links(self, content):
         # If ignore_links is True, remove all a tags (links) or replace them with their text content

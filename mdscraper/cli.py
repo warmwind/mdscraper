@@ -18,8 +18,8 @@ def main():
     input_group.add_argument('--site', help='A URL of a page to scrape for URLS to download a site')
 
     parser.add_argument('--output', default='$TITLE',
-                        help=('Output Markdown file name. Default (%TITLE) will generate a filename based on '
-                              'the Webpage Title. If you prefer to use the URL set this to %URL. Otherwise, use '
+                        help=('Output Markdown file name. Default (%%TITLE) will generate a filename based on '
+                              'the Webpage Title. If you prefer to use the URL set this to %%URL. Otherwise, use '
                               'to set as the desired filename'))
     parser.add_argument('--outdir', default='',
                         help='Output directory for markdown files, used with --file, --site, or with generated --output')
@@ -31,6 +31,8 @@ def main():
                         help='Ignore all images in the content')
     parser.add_argument('--no-links', action='store_true',
                         help='Ignore all links in the content')
+    parser.add_argument('--prepend-source-link', action='store_true',
+                        help='Prepend source link in markdown file')
     parser.add_argument('--exclude-pages', '-p', nargs='*',
                         help='Space separated list of page names to ignore, can unix filename pattern matching.')
     parser.add_argument('--exclude-selectors', '-s', nargs='*',
