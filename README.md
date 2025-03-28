@@ -61,6 +61,7 @@ mdscraper --file urls.txt --outdir output_directory
 - `--extra-heading-space LEVELS`: Add newlines before specific heading levels for better readability. LEVELS can be:
   - `all`: Add spacing to all heading levels (h1-h6)
   - `1,2,3`: Comma-separated list of specific heading levels to apply spacing to
+- `--prepend-source-link`: Prepend source link in markdown file
 
 ## Development
 

@@ -184,7 +184,7 @@ def find_content_container(soup, debug=False):
                 
     return content
 
-def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
+def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -215,7 +215,8 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
                 counter += 1
             
             # Save to file
-            file_size = save_markdown_to_file(markdown, output_file)
+            file_content = f"{url}\n\n{markdown}" if prepend_source_link else markdown
+            file_size = save_markdown_to_file(file_content, output_file)
             print(f"Successfully saved to {output_file} ({file_size:.2f} KB)")
             success_count += 1
         else:
@@ -226,7 +227,7 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
     print(f"Success: {success_count}, Failed: {failure_count}")
     print(f"Markdown files saved to the '{output_dir}' directory")
 
-def process_single_url(url, output_file, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
+def process_single_url(url, output_file, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False):
     print(f"Fetching and parsing {url}...")
     markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, 
                                                   ignore_links=ignore_links, 
@@ -234,14 +235,15 @@ def process_single_url(url, output_file, debug=False, ignore_images=False, ignor
     
     if markdown:
         # Save to file
-        file_size = save_markdown_to_file(markdown, output_file)
+        file_content = f"{url}\n\n{markdown}" if prepend_source_link else markdown
+        file_size = save_markdown_to_file(file_content, output_file)
         print(f"Successfully parsed {url} and saved to {output_file}")
         print(f"File size: {file_size:.2f} KB")
         
         # Print preview to console
-        preview_length = min(300, len(markdown))
+        preview_length = min(300, len(file_content))
         print("\n--- Markdown Content Preview ---\n")
-        print(markdown[:preview_length] + ("..." if preview_length < len(markdown) else ""))
+        print(file_content[:preview_length] + ("..." if preview_length < len(file_content) else ""))
         print("\n--- End of Preview ---")
         return True
     else:

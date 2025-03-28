@@ -29,6 +29,8 @@ def main():
                         help='Ignore all links in the content')
     parser.add_argument('--extra-heading-space', metavar='LEVELS', type=str, default=None,
                         help='Add additional newlines before specified heading levels (e.g., "1,2,3" for h1,h2,h3 or "all" for all headings)')
+    parser.add_argument('--prepend-source-link', action='store_true',
+                        help='Prepend source link in markdown file')
     
     args = parser.parse_args()
     
@@ -36,13 +38,15 @@ def main():
         # Process a single URL
         success = process_single_url(args.url, args.output, debug=args.debug, 
                                    ignore_images=args.no_images, ignore_links=args.no_links,
-                                   extra_heading_space=args.extra_heading_space)
+                                   extra_heading_space=args.extra_heading_space,
+                                   prepend_source_link=args.prepend_source_link)
         sys.exit(0 if success else 1)
     elif args.file:
         # Process multiple URLs from a file
         process_url_file(args.file, output_dir=args.outdir, debug=args.debug, 
                         ignore_images=args.no_images, ignore_links=args.no_links,
-                        extra_heading_space=args.extra_heading_space)
+                        extra_heading_space=args.extra_heading_space,
+                        prepend_source_link=args.prepend_source_link)
 
 if __name__ == "__main__":
     main() 
