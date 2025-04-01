@@ -12,7 +12,7 @@ import tempfile
 import shutil
 from unittest.mock import patch, MagicMock
 from bs4 import BeautifulSoup
-from mdscraper.core.scraper import fetch_and_convert_to_markdown, process_single_url, process_url_file, find_content_container, add_newlines_before_headings
+from mdscraper.core.scraper import process_single_url, process_url_file, find_content_container, add_newlines_before_headings, fetch_content, _fetch_content, convert_to_markdown
 
 class TestMDScraper(unittest.TestCase):
     
@@ -80,36 +80,44 @@ class TestMDScraper(unittest.TestCase):
         mock_get.return_value = mock_response
         
         # Test basic conversion
-        markdown, title = fetch_and_convert_to_markdown("https://example.com", debug=False)
+        content, title, soup = _fetch_content("https://example.com", debug=False)
+        markdown = convert_to_markdown(content, title)
         self.assertIsNotNone(markdown)
+        assert markdown is not None  # Type assertion
         self.assertIn("# Test Article", markdown)
         self.assertIn("This is a test paragraph", markdown)
         self.assertIn("![Test Image]", markdown)
         self.assertIn("Section Heading", markdown)
         
         # Test with image removal
-        markdown, title = fetch_and_convert_to_markdown("https://example.com", ignore_images=True)
+        content, title, soup = _fetch_content("https://example.com", debug=False, ignore_images=True)
+        markdown = convert_to_markdown(content, title)
         self.assertIsNotNone(markdown)
+        assert markdown is not None  # Type assertion
         self.assertNotIn("![Test Image]", markdown)
         self.assertNotIn("![Section Image]", markdown)
         
         # Test with link removal
-        markdown, title = fetch_and_convert_to_markdown("https://example.com", ignore_links=True)
+        content, title, soup = _fetch_content("https://example.com", debug=False, ignore_links=True)
+        markdown = convert_to_markdown(content, title)
         self.assertIsNotNone(markdown)
+        assert markdown is not None  # Type assertion
         self.assertNotIn("](https://example.com)", markdown)
         self.assertIn("a link", markdown)
         
         # Test with extra heading space
-        markdown, title = fetch_and_convert_to_markdown("https://example.com", extra_heading_space="2,3")
+        content, title, soup = _fetch_content("https://example.com", debug=False)
+        markdown = convert_to_markdown(content, title, extra_heading_space="2,3")
         self.assertIsNotNone(markdown)
+        assert markdown is not None  # Type assertion
         self.assertTrue(markdown.count("\n\n\n## Section Heading") > 0 or markdown.count("\n\n\n##Section Heading") > 0)
     
-    @patch('mdscraper.core.scraper.fetch_and_convert_to_markdown')
+    @patch('mdscraper.core.scraper.fetch_content')
     @patch('mdscraper.core.scraper.save_markdown_to_file')
     def test_process_single_url(self, mock_save, mock_fetch):
         """Test processing a single URL"""
         # Setup mocks
-        mock_fetch.return_value = ("# Test Markdown", "Test Title")
+        mock_fetch.return_value = "# Test Markdown"
         mock_save.return_value = 1.5  # 1.5 KB file size
         
         output_file = os.path.join(self.test_dir, "output.md")
@@ -125,19 +133,19 @@ class TestMDScraper(unittest.TestCase):
         mock_save.reset_mock()
         result = process_single_url("https://example.com", output_file, debug=True)
         self.assertTrue(result)
-        mock_fetch.assert_called_with("https://example.com", debug=True, ignore_images=False, ignore_links=False, extra_heading_space=None)
+        mock_fetch.assert_called_with("https://example.com", debug=True, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False)
         
-        # Test with options
+        # Test with options including prepend_source_link
         mock_fetch.reset_mock()
-        result = process_single_url("https://example.com", output_file, ignore_images=True, ignore_links=True, extra_heading_space="all")
-        mock_fetch.assert_called_with("https://example.com", debug=False, ignore_images=True, ignore_links=True, extra_heading_space="all")
+        result = process_single_url("https://example.com", output_file, ignore_images=True, ignore_links=True, extra_heading_space="all", prepend_source_link=True)
+        mock_fetch.assert_called_with("https://example.com", debug=False, ignore_images=True, ignore_links=True, extra_heading_space="all", prepend_source_link=True)
         
         # Test failure case
-        mock_fetch.return_value = (None, None)
+        mock_fetch.return_value = None
         result = process_single_url("https://example.com", output_file)
         self.assertFalse(result)
     
-    @patch('mdscraper.core.scraper.fetch_and_convert_to_markdown')
+    @patch('mdscraper.core.scraper.fetch_content')
     @patch('mdscraper.core.scraper.save_markdown_to_file')
     def test_process_url_file(self, mock_save, mock_fetch):
         """Test processing multiple URLs from a file"""
@@ -149,7 +157,7 @@ class TestMDScraper(unittest.TestCase):
         output_dir = os.path.join(self.test_dir, "outputs")
         
         # Setup mock for successful fetches
-        mock_fetch.return_value = ("# Test Markdown", "Test Title")
+        mock_fetch.return_value = "# Test Markdown"
         mock_save.return_value = 1.5  # 1.5 KB file size
         
         # Test with default options
@@ -160,17 +168,17 @@ class TestMDScraper(unittest.TestCase):
         # Check if the output directory was created
         self.assertTrue(os.path.exists(output_dir))
         
-        # Test with various options
+        # Test with various options including prepend_source_link
         mock_fetch.reset_mock()
         mock_save.reset_mock()
-        process_url_file(url_file, output_dir=output_dir, debug=True, ignore_images=True, ignore_links=True, extra_heading_space="1,2")
+        process_url_file(url_file, output_dir=output_dir, debug=True, ignore_images=True, ignore_links=True, extra_heading_space="1,2", prepend_source_link=True)
         self.assertEqual(mock_fetch.call_count, 2)
-        mock_fetch.assert_called_with("https://example.com/2", debug=True, ignore_images=True, ignore_links=True, extra_heading_space="1,2")
+        mock_fetch.assert_called_with("https://example.com/2", debug=True, ignore_images=True, ignore_links=True, extra_heading_space="1,2", prepend_source_link=True)
         
         # Test handling failure cases
         mock_fetch.reset_mock()
         mock_save.reset_mock()
-        mock_fetch.side_effect = [(None, None), ("# Test Markdown", "Test Title")]
+        mock_fetch.side_effect = [None, "# Test Markdown"]
         process_url_file(url_file, output_dir=output_dir)
         self.assertEqual(mock_fetch.call_count, 2)
         self.assertEqual(mock_save.call_count, 1)
@@ -203,7 +211,10 @@ class TestMDScraper(unittest.TestCase):
             mock_get.return_value = mock_response
             
             # Test with image removal
-            markdown, _ = fetch_and_convert_to_markdown("https://example.com", ignore_images=True)
+            markdown = fetch_content("https://example.com", ignore_images=True)
+            
+            self.assertIsNotNone(markdown)
+            assert markdown is not None  # Type assertion
             
             # The resulting markdown should not have more than 2 consecutive newlines
             self.assertNotIn("\n\n\n", markdown)
@@ -218,6 +229,47 @@ class TestMDScraper(unittest.TestCase):
             # Content should flow without excessive spacing
             paragraphs = [p for p in markdown.split("\n\n") if p.strip()]
             self.assertTrue(len(paragraphs) >= 3)  # At least 3 paragraphs (title, before image, after image)
+    
+    @patch('requests.get')
+    def test_fetch_content(self, mock_get):
+        """Test fetching content from a URL without downloading"""
+        # Setup the mock
+        mock_response = MagicMock()
+        mock_response.text = self.sample_html
+        mock_response.encoding = 'utf-8'
+        mock_get.return_value = mock_response
+        
+        # Test basic content fetching
+        content = fetch_content("https://example.com")
+        self.assertIsNotNone(content)
+        assert content is not None
+        self.assertIn("Test Article", content)
+        self.assertIn("This is a test paragraph", content)
+        self.assertIn("a link", content)
+        
+        # Test with image removal
+        content = fetch_content("https://example.com", ignore_images=True)
+        self.assertIsNotNone(content)
+        assert content is not None
+        self.assertNotIn("Test Image", content)
+        
+        # Test with link removal
+        content = fetch_content("https://example.com", ignore_links=True)
+        self.assertIsNotNone(content)
+        assert content is not None
+        self.assertIn("a link", content)  # Text of link should remain
+        self.assertNotIn("https://example.com", content)  # URL should be removed
+        
+        # Test with extra heading space
+        content = fetch_content("https://example.com", extra_heading_space="2,3")
+        self.assertIsNotNone(content)
+        assert content is not None
+        self.assertTrue(content.count("\n\n\n## Section Heading") > 0 or content.count("\n\n\n##Section Heading") > 0)
+        
+        # Test with request failure
+        mock_get.side_effect = Exception("Connection error")
+        content = fetch_content("https://example.com")
+        self.assertIsNone(content)
 
 if __name__ == '__main__':
     unittest.main() 

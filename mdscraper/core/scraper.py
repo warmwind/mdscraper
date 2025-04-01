@@ -9,7 +9,19 @@ import os
 from mdscraper.core.utils import clean_text, sanitize_filename, save_markdown_to_file
 from bs4.element import Tag, NavigableString
 
-def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None):
+def _fetch_content(url, debug=False, ignore_images=False, ignore_links=False):
+    """
+    Internal function to fetch and process content from a URL.
+    
+    Args:
+        url (str): URL to fetch
+        debug (bool): Enable debug output
+        ignore_images (bool): Remove images from content
+        ignore_links (bool): Remove links from content
+        
+    Returns:
+        tuple: (content, title, soup) or (None, None, None) if fetching fails
+    """
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     }
@@ -18,9 +30,10 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
         response = requests.get(url, headers=headers)
         response.raise_for_status()  # Raise an exception for HTTP errors
         response.encoding = 'utf-8'  # Ensure correct encoding
-    except requests.exceptions.RequestException as e:
-        print(f"Error fetching URL: {e}")
-        return None, None
+    except Exception as e:
+        if debug:
+            print(f"Error fetching URL: {e}")
+        return None, None, None
     
     soup = BeautifulSoup(response.text, 'html.parser')
     
@@ -42,13 +55,13 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
     content = find_content_container(soup, debug)
     
     if not content:
-        print("Could not find the main content container.")
         if debug:
+            print("Could not find the main content container.")
             # Save the HTML for inspection
             with open('debug_html.html', 'w', encoding='utf-8') as f:
                 f.write(response.text)
             print("Saved HTML to debug_html.html for inspection")
-        return None, None
+        return None, None, None
     
     # If ignore_images is True, remove all img tags before conversion
     if ignore_images and isinstance(content, Tag):
@@ -75,6 +88,21 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
         if debug:
             print("All links have been removed from the content")
     
+    return content, title, soup
+
+def convert_to_markdown(content, title, extra_heading_space=None, debug=False):
+    """
+    Convert HTML content to markdown with standard formatting.
+    
+    Args:
+        content: The HTML content to convert
+        title: The title to use at the beginning of the markdown
+        extra_heading_space (str, optional): Add extra newlines before heading levels
+        debug (bool, optional): Enable debug output
+        
+    Returns:
+        str: The formatted markdown content
+    """
     # Convert the content to markdown using markdownify
     markdown_content = md(str(content), heading_style="ATX")
     
@@ -92,7 +120,34 @@ def fetch_and_convert_to_markdown(url, debug=False, ignore_images=False, ignore_
     if extra_heading_space:
         markdown = add_newlines_before_headings(markdown, extra_heading_space, debug=debug)
     
-    return markdown, title
+    return markdown
+
+def fetch_content(url, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False, debug=False ):
+    """
+    Fetch content from a URL and return it as markdown.
+    
+    Args:
+        url (str): URL to fetch
+        debug (bool, optional): Enable debug output. Defaults to False.
+        ignore_images (bool, optional): Remove images from content. Defaults to False.
+        ignore_links (bool, optional): Remove links from content. Defaults to False.
+        extra_heading_space (str, optional): Add extra newlines before heading levels. Defaults to None.
+        prepend_source_link (bool, optional): Prepend the source link to the content. Defaults to False.
+        
+    Returns:
+        str or None: The content as markdown, or None if fetching fails
+    """
+    content, title, _ = _fetch_content(url, debug, ignore_images, ignore_links)
+    
+    if not content:
+        return None
+    
+    markdown = convert_to_markdown(content, title, extra_heading_space, debug)
+    
+    if prepend_source_link:
+        markdown = f"{url}\n\n{markdown}"
+    
+    return markdown
 
 def add_newlines_before_headings(markdown, heading_levels='all', debug=False):
     """
@@ -184,7 +239,7 @@ def find_content_container(soup, debug=False):
                 
     return content
 
-def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False):
+def process_url_file(url_file, output_dir="outputs", debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False):
     # Create output directory if it doesn't exist
     os.makedirs(output_dir, exist_ok=True)
     
@@ -200,11 +255,13 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
     for i, url in enumerate(urls, 1):
         print(f"\nProcessing URL {i}/{total_urls}: {url}")
         
-        markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, 
+        markdown = fetch_content(url, debug=debug, ignore_images=ignore_images, 
                                                        ignore_links=ignore_links, 
-                                                       extra_heading_space=extra_heading_space)
-        if markdown and title:
+                                                       extra_heading_space=extra_heading_space,
+                                                       prepend_source_link=prepend_source_link)
+        if markdown:
             # Create a sanitized filename from the title
+            title = markdown.split('\n')[0].replace('# ', '')
             filename = sanitize_filename(title)
             output_file = os.path.join(output_dir, f"{filename}.md")
             
@@ -215,8 +272,7 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
                 counter += 1
             
             # Save to file
-            file_content = f"{url}\n\n{markdown}" if prepend_source_link else markdown
-            file_size = save_markdown_to_file(file_content, output_file)
+            file_size = save_markdown_to_file(markdown, output_file)
             print(f"Successfully saved to {output_file} ({file_size:.2f} KB)")
             success_count += 1
         else:
@@ -229,21 +285,21 @@ def process_url_file(url_file, output_dir="outs", debug=False, ignore_images=Fal
 
 def process_single_url(url, output_file, debug=False, ignore_images=False, ignore_links=False, extra_heading_space=None, prepend_source_link=False):
     print(f"Fetching and parsing {url}...")
-    markdown, title = fetch_and_convert_to_markdown(url, debug=debug, ignore_images=ignore_images, 
+    markdown = fetch_content(url, debug=debug, ignore_images=ignore_images, 
                                                   ignore_links=ignore_links, 
-                                                  extra_heading_space=extra_heading_space)
+                                                  extra_heading_space=extra_heading_space,
+                                                  prepend_source_link=prepend_source_link)
     
     if markdown:
         # Save to file
-        file_content = f"{url}\n\n{markdown}" if prepend_source_link else markdown
-        file_size = save_markdown_to_file(file_content, output_file)
+        file_size = save_markdown_to_file(markdown, output_file)
         print(f"Successfully parsed {url} and saved to {output_file}")
         print(f"File size: {file_size:.2f} KB")
         
         # Print preview to console
-        preview_length = min(300, len(file_content))
+        preview_length = min(300, len(markdown))
         print("\n--- Markdown Content Preview ---\n")
-        print(file_content[:preview_length] + ("..." if preview_length < len(file_content) else ""))
+        print(markdown[:preview_length] + ("..." if preview_length < len(markdown) else ""))
         print("\n--- End of Preview ---")
         return True
     else:

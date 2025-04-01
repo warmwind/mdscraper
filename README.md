@@ -53,6 +53,28 @@ Create a text file with one URL per line, then run:
 mdscraper --file urls.txt --outdir output_directory
 ```
 
+### Using as a library
+
+MDScraper can also be imported and used programmatically:
+
+```python
+from mdscraper import fetch_content
+
+# Fetch content as markdown (default)
+markdown_content = fetch_content("https://example.com")
+
+
+# Additional options
+content = fetch_content(
+    "https://example.com",
+    ignore_images=True,  # Remove images
+    ignore_links=True,   # Remove links
+    debug=True,          # Enable debug output
+    extra_heading_space="2"  # Add extra newlines before headings
+    prepend_source_link=True # Prepend source link
+)
+```
+
 ### Additional options
 
 - `--debug` or `-d`: Enable debug mode for more information
@@ -61,7 +83,7 @@ mdscraper --file urls.txt --outdir output_directory
 - `--extra-heading-space LEVELS`: Add newlines before specific heading levels for better readability. LEVELS can be:
   - `all`: Add spacing to all heading levels (h1-h6)
   - `1,2,3`: Comma-separated list of specific heading levels to apply spacing to
-- `--prepend-source-link`: Prepend source link in markdown file
+- `--prepend-source-link`: Prepend source link in content
 
 ## Development
 
