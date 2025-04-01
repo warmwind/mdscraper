@@ -121,7 +121,7 @@ class MdScraper():
 
         return url
 
-    def fetch_page(self, url):
+    def fetch_webpage(self, url):
         """Captures a page as a BeautifulSoup object"""
         headers = {'User-Agent': self.options['user_agent']}
 
@@ -129,7 +129,7 @@ class MdScraper():
             response = requests.get(url, headers=headers, timeout=self.options['requests_timeout'])
             response.raise_for_status()  # Raise an exception for HTTP errors
             response.encoding = 'utf-8'  # Ensure correct encoding
-        except requests.exceptions.RequestException as err:
+        except Exception as err:
             print(f"Error fetching URL: {err}")
             return None
 
@@ -188,6 +188,11 @@ class MdScraper():
         # Convert the content to markdown using markdownify
         markdown = md(html_str, heading_style="ATX")
 
+        if not markdown:
+            if self.options['debug']:
+                print("Debug: No content found to convert to markdown")
+            return None
+
         if title:
             # Add the title at the beginning if it doesn't already exist
             title_str = f"# {title}\n\n"
@@ -241,6 +246,71 @@ class MdScraper():
                 print("Saved HTML to debug_html.html for inspection")
             return None
 
+        return content
+
+    def fetch_content(self, url):
+        """
+        Fetch content from a URL and return it as markdown.
+        
+        Args:
+            url (str): URL to fetch
+            
+        Returns:
+            str or None: The content as markdown, or None if fetching fails
+        """
+        content, title, _ = self._fetch_content(url)
+
+        if self.options['prepend_source_link']:
+            markdown = self.convert_to_markdown(content, title, url)
+        else:
+            markdown = self.convert_to_markdown(content, title)
+
+        return markdown
+
+    def _fetch_content(self, url):
+        """
+        Internal function to fetch and process content from a URL.
+        
+        Args:
+            url (str): URL to fetch
+            
+        Returns:
+            tuple: (markdown, title) or (None, None) if fetching fails
+        """
+        soup = self.fetch_webpage(url)
+        content = self.extract_page_content(soup)
+        if not content:
+            return None, None, None
+
+        self.process_exclude_selectors(content)
+        self.remove_images(content)
+        self.remove_links(content)
+        self.make_urls_relative(content)
+
+        title = self.extract_page_title(soup)
+
+        return content, title, soup
+
+    def convert_to_markdown(self, content, title=None, source_url=None):
+        """
+        Converts the given HTML content into Markdown format.
+
+        Args:
+            content (str): The HTML content to be converted.
+            title (str): The title of the content.
+            url (str): The URL of the source content.
+
+        Notes:
+            - If the 'prepend_source_link' option is enabled, a source link
+              will be included in the Markdown output.
+            - The conversion is performed using the `html_to_markdown` method.
+        """
+        if not content:
+            return None
+        
+        return self.html_to_markdown(str(content), title, source_url)
+
+    def remove_images(self, content):
         # If no_images is True, remove all img tags before conversion
         if self.options['no_images'] and isinstance(content, Tag):
             for img in content.find_all('img'):
@@ -254,28 +324,6 @@ class MdScraper():
 
             if self.options['debug']:
                 print("All images have been removed from the content")
-
-        return content
-
-    def fetch_and_convert_to_markdown(self, url):
-        """Fetches and converts a single webpage to a markdown file by extracting only the main content"""
-        soup = self.fetch_page(url)
-        content = self.extract_page_content(soup)
-        if not content:
-            return None, None
-
-        self.process_exclude_selectors(content)
-        self.remove_links(content)
-        self.make_urls_relative(content)
-
-        title = self.extract_page_title(soup)
-
-        if self.options['prepend_source_link']:
-            markdown = self.html_to_markdown(str(content), title, url)
-        else:
-            markdown = self.html_to_markdown(str(content), title)
-
-        return markdown, title
 
     def remove_links(self, content):
         # If ignore_links is True, remove all a tags (links) or replace them with their text content
@@ -447,7 +495,7 @@ class MdScraper():
 
     def process_site_url(self, site_url, output_dir=None):
         """Downloads and converts a list of URLs from a webpage"""
-        soup = self.fetch_page(site_url)
+        soup = self.fetch_webpage(site_url)
         content = self.extract_page_content(soup)
 
         parsed_url = urlparse(site_url)
@@ -465,10 +513,11 @@ class MdScraper():
         if self.options['verbose'] > 0:
             print(f"Fetching and parsing {url}...")
 
-        markdown, title = self.fetch_and_convert_to_markdown(url)
-        if markdown and title:
+        markdown = self.fetch_content(url)
+        if markdown:
             if output_file == '%TITLE':
                 # Create a sanitized filename from the title
+                title = markdown.split('\n')[0].replace('# ', '').strip()
                 filename = sanitize_filename(title)
                 output_file = os.path.join(output_dir, f"{filename}.md")
                 if self.options['debug']:

@@ -66,6 +66,35 @@ Create a text file with one URL per line, then run:
 ```bash
 mdscraper --file urls.txt --outdir output_directory
 ```
+### Process multiple URLs from a webpage
+Only URLs on the specified site will be captured as markdown. This will not "crawl" a site to try and download all possible webpages.
+
+```bash
+# Eaxmple
+mdscraper --site https://example.com --outdir output_directory
+
+# Better example
+mdscraper --site https://help.prusa3d.com/filament-material-guide --outdir filament_material_guide --content table
+```
+
+To exclude webpages you can add an exclusion page name list:
+
+```bash
+mdscraper --site https://example.com --outdir output_directory --exclude-pages terms
+```
+
+### Using as a library
+
+MDScraper can also be imported and used programmatically:
+
+```python
+from mdscraper import MdScraper
+
+mds = MdScraper()
+
+# Fetch content as markdown (default)
+markdown_content = mds.fetch_content("https://example.com")
+```
 
 ### Options
 

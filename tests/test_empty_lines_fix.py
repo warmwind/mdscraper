@@ -86,7 +86,7 @@ def test_empty_lines_fix():
         # First test without image removal (baseline)
         print("\nTesting with images (baseline)...")
         mds.options['no_images'] = False
-        markdown_with_images, _ = mds.fetch_and_convert_to_markdown("https://example.com")
+        markdown_with_images = mds.fetch_content("https://example.com")
         
         # Save to a file for inspection
         with open('test_with_images.md', 'w', encoding='utf-8') as f:
@@ -95,7 +95,7 @@ def test_empty_lines_fix():
         # Now test with image removal
         print("\nTesting with images removed...")
         mds.options['no_images'] = True
-        markdown_without_images, _ = mds.fetch_and_convert_to_markdown("https://example.com")
+        markdown_without_images = mds.fetch_content("https://example.com")
         
         # Save to a file for inspection
         with open('test_without_images.md', 'w', encoding='utf-8') as f:
