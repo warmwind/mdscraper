@@ -515,28 +515,30 @@ class MdScraper():
 
         markdown = self.fetch_content(url)
         if markdown:
-            if output_file == '%TITLE':
-                # Create a sanitized filename from the title
-                title = markdown.split('\n')[0].replace('# ', '').strip()
-                filename = sanitize_filename(title)
-                output_file = os.path.join(output_dir, f"{filename}.md")
-                if self.options['debug']:
-                    print(f'Generated filename "{output_file}" from title "{title}"')
+            if output_file in ('%TITLE', '%URL'):
+                if output_file == '%TITLE':
+                    # Get the title from the first h1 tag (# ) in the markdown content
+                    generate_filename = self.extract_md_title(markdown)
+                    if not generate_filename:
+                        if self.options['debug']:
+                            print("No title found, using URL as filename")
+                        output_file = '%URL'
 
-            elif output_file == '%URL':
-                # Create a sanitized filename from the URL
-                last_url_part = get_last_url_part(url)
-                filename = sanitize_filename(last_url_part)
+                if output_file == '%URL':
+                    # Create a sanitized filename from the URL
+                    generate_filename = get_last_url_part(url)
+
+                filename = sanitize_filename(generate_filename)
+                filename_source = output_file[1:]  # Remove the % sign
                 output_file = os.path.join(output_dir, f"{filename}.md")
                 if self.options['debug']:
-                    print(f'Generated filename "{output_file}" from url "{url}"')
-            
+                    print(f'Generated filename "{output_file}" from {filename_source} "{generate_filename}"')
             else:
                 output_file = os.path.join(output_dir, output_file)
 
-            # If needed, create output directory if it doesn't exist
-            if output_dir:
-                os.makedirs(output_dir, exist_ok=True)
+            # Create output directory if it doesn't exist
+            output_dir = os.path.dirname(output_file)
+            os.makedirs(output_dir, exist_ok=True)
 
             # Save to file
             save_markdown_to_file(markdown, output_file)
@@ -561,6 +563,14 @@ class MdScraper():
             print("Make sure the URL is correct and the website is accessible.")
             print("Use --debug flag for more information.")
         return False
+
+    def extract_md_title(self, markdown):
+        title = None
+        for line in markdown.split('\n'):
+            if line.startswith('# '):
+                title = line.replace('# ', '')
+                break
+        return title
 
 
 def scraper_cli(**options):
