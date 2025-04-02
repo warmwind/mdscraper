@@ -271,5 +271,47 @@ class TestMDScraper(unittest.TestCase):
         content = fetch_content("https://example.com")
         self.assertIsNone(content)
 
+    @patch('mdscraper.core.scraper.fetch_content')
+    @patch('mdscraper.core.scraper.save_markdown_to_file')
+    def test_title_extraction_with_prepended_source(self, mock_save, mock_fetch):
+        """Test that title is correctly extracted even when source link is prepended"""
+        # Create a URL file
+        url_file = os.path.join(self.test_dir, "title_test_urls.txt")
+        with open(url_file, 'w') as f:
+            f.write("https://example.com/article")
+
+        output_dir = os.path.join(self.test_dir, "title_test_outputs")
+        
+        # Create markdown with source link prepended
+        markdown_with_source = "https://example.com/article\n\n# Test Article Title\n\nThis is the content."
+        mock_fetch.return_value = markdown_with_source
+        mock_save.return_value = 1.0
+        
+        # Test title extraction with prepended source link
+        with patch('os.path.exists') as mock_exists:
+            # Make sure we don't actually create files
+            mock_exists.return_value = False
+            
+            # Capture calls to save_markdown_to_file to check filenames
+            process_url_file(url_file, output_dir=output_dir, prepend_source_link=True)
+            
+            # Check that the saved filename contains the title
+            filename_used = mock_save.call_args[0][1]
+            self.assertIn("Test Article Title", filename_used)
+            self.assertNotIn("https", filename_used)  # URL should not be in filename
+
+        # Test fallback when no h1 tag is found
+        markdown_without_h1 = "https://example.com/article\n\nThis is content without an h1 tag."
+        mock_fetch.return_value = markdown_without_h1
+        
+        with patch('os.path.exists') as mock_exists:
+            mock_exists.return_value = False
+            
+            process_url_file(url_file, output_dir=output_dir, prepend_source_link=True)
+            
+            # Check that the fallback filename is used
+            filename_used = mock_save.call_args[0][1]
+            self.assertIn("Article_article", filename_used)
+
 if __name__ == '__main__':
     unittest.main() 

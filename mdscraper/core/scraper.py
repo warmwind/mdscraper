@@ -260,8 +260,17 @@ def process_url_file(url_file, output_dir="outputs", debug=False, ignore_images=
                                                        extra_heading_space=extra_heading_space,
                                                        prepend_source_link=prepend_source_link)
         if markdown:
-            # Create a sanitized filename from the title
-            title = markdown.split('\n')[0].replace('# ', '')
+            # Get the title from the first h1 tag (# ) in the markdown content
+            title = None
+            for line in markdown.split('\n'):
+                if line.startswith('# '):
+                    title = line.replace('# ', '')
+                    break
+            
+            if not title:
+                # Fallback if no h1 found
+                title = f"Article_{url.split('/')[-1]}"
+            
             filename = sanitize_filename(title)
             output_file = os.path.join(output_dir, f"{filename}.md")
             
