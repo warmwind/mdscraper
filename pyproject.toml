@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdscraper"
-version = "0.1.2"
+version = "0.1.3"
 authors = [{ name = "Oscar Jiang", email = "pengj0520@gmail.com" }]
 description = "A tool to fetch webpages and convert their content to clean Markdown format for LLM processing"
 readme = "README.md"
