@@ -483,7 +483,7 @@ class MdScraper():
                     print(f'Generated filename "{output_file}" from url "{url}"')
             
             else:
-                output_file = os.path.join(output_dir, self.options['output'])
+                output_file = os.path.join(output_dir, output_file)
 
             # If needed, create output directory if it doesn't exist
             if output_dir:
