@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdscraper"
-version = "0.1.0"
+version = "0.2.0"
 authors = [{ name = "Oscar Jiang", email = "pengj0520@gmail.com" }]
 description = "A tool to fetch webpages and convert their content to clean Markdown format for LLM processing"
 readme = "README.md"
@@ -30,7 +30,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0"]
+dev = ["pytest>=8.0.0", "pytest-cov>=4.1.0", "bump2version>=1.0.1"]
 
 [project.urls]
 "Homepage" = "https://github.com/warmwind/mdscraper"

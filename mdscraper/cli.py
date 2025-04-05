@@ -7,9 +7,10 @@ Command-line interface for MDScraper
 
 import argparse
 from mdscraper.core.scraper import scraper_cli
+from mdscraper import __version__
 
-def main():
-    parser = argparse.ArgumentParser(description='Fetch webpages and convert them to Markdown format.')
+def create_cli_parser():
+    parser = argparse.ArgumentParser(description=f'mdscraper v{__version__}: Fetch webpages and convert them to Markdown format.')
 
     # Create a mutually exclusive group for single URL vs file input
     input_group = parser.add_mutually_exclusive_group(required=True)
@@ -46,8 +47,12 @@ def main():
     parser.add_argument('--debug', '-d', action='store_true',
                         help='Enable debug mode for more information')
     parser.add_argument('--verbose', '-v', action='count', default=0,
-                        help='Display runtime information. Use more than once to increase the verbosity level. Default level is 0')
+                        help='Display runtime information. Use more than once to increase the verbosity level. Default level is silent.')
 
+    return parser
+
+def main():
+    parser = create_cli_parser()
     args = parser.parse_args()
     scraper_cli(**vars(args))
 

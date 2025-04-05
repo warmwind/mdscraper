@@ -19,7 +19,8 @@ def cleanup_test_files():
         'python_combined.md',
         'python_docs_with_images.md',
         'python_docs_without_images.md',
-        'sample_urls.txt'
+        'sample_urls.txt',
+        'cli_basic.md'
     ]
 
     # Remove individual files
