@@ -4,8 +4,8 @@ A specialized tool for extracting clean, structured content from webpages and co
 
 Ideal for:
 
-- preparing web content for LLM embeddings
-- semantic search applications
+- Preparing web content for LLM embeddings
+- Semantic search applications
 - Converting webdocs to GitHub/GitLab wikis
 
 ## Features
@@ -29,6 +29,12 @@ Ideal for:
 
 ## Installation
 
+First, ensure you have UV installed ([official UV installation guide](https://github.com/astral-sh/uv)).
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
 ### Option 1: Install from PyPI
 
 ```bash
@@ -37,13 +43,7 @@ uv pip install mdscraper
 
 ### Option 2: Install from source
 
-First, ensure you have UV installed. If not, install it following the [official UV installation guide](https://github.com/astral-sh/uv):
-
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-Then clone and install the repository:
+Clone and install the repository:
 
 ```bash
 git clone https://github.com/yourusername/mdscraper.git
@@ -90,7 +90,16 @@ MDScraper can also be imported and used programmatically:
 ```python
 from mdscraper import MdScraper
 
+# Use the default options
 mds = MdScraper()
+
+# Or set options
+mds = MdScraper(no_images = True,  # Remove images
+                no_links = True,   # Remove links
+                debug = True,      # Enable debug output
+                extra_heading_space = "2"  # Add extra newlines before headings
+                prepend_source_link = True # Prepend source link
+)
 
 # Fetch content as markdown (default)
 markdown_content = mds.fetch_content("https://example.com")

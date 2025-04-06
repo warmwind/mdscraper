@@ -1,19 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# pylint: disable=line-too-long
+
+"""
+This module provides utility functions for various common tasks such as URL parsing, 
+HTML content extraction, text cleaning, file operations, and configuration management.
+"""
 
 import os
 import re
 import html
 import json
-import yaml
 import datetime
-# import logging
-from bs4.element import Tag
 from urllib.parse import urlparse
+
+import yaml
+from bs4.element import Tag
 
 # logging.basicConfig(level=logging.INFO)
 
 def get_last_url_part(url):
+    """
+    Extracts and returns the last part of the path from a given URL.
+
+    Args:
+        url (str): The URL from which to extract the last part of the path.
+
+    Returns:
+        str: The last segment of the path in the URL. If the path ends with a
+        slash, an empty string is returned.
+    """
     parsed_url = urlparse(url)
 
     # Get the path part of the URL ignoring parameters and domain
@@ -25,6 +41,17 @@ def get_last_url_part(url):
     return last_part
 
 def get_div_attrs(soup):
+    """
+    Extracts the class and id attributes from all <div> elements in a BeautifulSoup object.
+
+    Args:
+        soup (BeautifulSoup): A BeautifulSoup object representing the parsed HTML document.
+
+    Returns:
+        tuple: A tuple containing two lists:
+            - class_list (list): A list of all class attribute values found in <div> elements.
+            - id_list (list): A list of all id attribute values found in <div> elements.
+    """
     class_list = []
     id_list = []
     for div in soup.find_all('div'):
@@ -41,10 +68,10 @@ def get_div_attrs(soup):
 def clean_text(text):
     """
     Clean and normalize text content.
-    
+
     Args:
         text (str): Text to clean
-        
+
     Returns:
         str: Cleaned text
     """
@@ -60,10 +87,10 @@ def clean_text(text):
 def sanitize_filename(filename):
     """
     Convert a string into a valid filename by replacing invalid characters.
-    
+
     Args:
         filename (str): Original filename
-        
+
     Returns:
         str: Sanitized filename
     """
@@ -73,7 +100,7 @@ def sanitize_filename(filename):
 def save_markdown_to_file(markdown, output_file):
     """
     Save markdown content to a file.
-    
+
     Args:
         markdown (str): Markdown content to save
         output_file (str): Path to the output file
@@ -84,10 +111,10 @@ def save_markdown_to_file(markdown, output_file):
 def get_size_kb(file_path):
     """
     Get the size of a file in kilobytes.
-    
+
     Args:
         file_path (str): Path to the target file
-        
+
     Returns:
         float: Size of the saved file in KB
     """
@@ -105,37 +132,58 @@ def load_config_file(file_path):
         dict: The content of the file as a Python dictionary.
     """
     try:
-        with open(file_path, 'r') as file:
+        with open(file_path, 'r', encoding='utf-8') as file:
             try:
                 # Try to load the file as YAML
-                # logging.info(f"Loading {file_path} as YAML")
                 return yaml.safe_load(file)
-            except yaml.YAMLError as err:
-                # logging.warning(f"Failed to load {file_path} as YAML: {err}")
+            except yaml.YAMLError:
                 # Try to load the file as JSON
                 file.seek(0)  # Reset the file pointer
                 try:
-                    # logging.info(f"Loading {file_path} as JSON")
                     return json.load(file)
-                except json.JSONDecodeError as err:
-                    # logging.error(f"Failed to load {file_path} as JSON: {err}")
-                    raise ValueError(f"Invalid file format: {file_path}") from err
+                except json.JSONDecodeError as json_err:
+                    print(f"Error: Failed to load {file_path} as JSON: {json_err}")
+                    raise ValueError(f"Invalid file format: {file_path}") from json_err
     except FileNotFoundError:
-        # logging.error(f"File not found: {file_path}")
+        print(f"Error: File not found: {file_path}")
         raise
     except Exception as err:
-        # logging.error(f"An error occurred: {err}")
+        print(f"Error: An unexpected error occurred: {err}")
         raise
 
 def create_config_file(config_dict, filename):
+    """
+    Creates a configuration file in YAML format.
+
+    Args:
+        config_dict (dict): A dictionary containing the configuration data to be written to the file.
+        filename (str): The name (and path) of the file where the configuration will be saved.
+
+    Raises:
+        Exception: If an error occurs during file writing, it will be caught and printed.
+
+    Notes:
+        - The YAML file is created with a block-style format (default_flow_style=False).
+    """
     try:
-        with open(filename, 'w') as config_file:
+        with open(filename, 'w', encoding='utf-8') as config_file:
             yaml.dump(config_dict, config_file, default_flow_style=False)
         print(f"Config file created successfully: {filename}")
-    except Exception as err:
+    except (IOError, yaml.YAMLError) as err:
         print(f"An error occurred: {err}")
 
 def generate_filename(prefix, ext):
+    """
+    Generates a filename using the given prefix and extension then appending the current timestamp.
+
+    Args:
+        prefix (str): The prefix to use for the filename.
+        ext (str): The file extension to use (e.g., 'txt', 'csv').
+
+    Returns:
+        str: A string representing the generated filename in the format 
+             '<prefix>_YYYYMMDD_HHMM.<ext>', where the timestamp is based on the current date and time.
+    """
     current_time = datetime.datetime.now()
     filename = f"{prefix}_{current_time.strftime('%Y%m%d_%H%M')}.{ext}"
     return filename

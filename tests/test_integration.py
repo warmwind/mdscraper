@@ -8,13 +8,13 @@ This script provides a quick way to verify that all features are working correct
 
 import os
 import sys
+import argparse
+import time
+
+from mdscraper.core.scraper import MdScraper
 
 # Add the parent directory to the Python path for proper imports
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-
-import argparse
-import time
-from mdscraper.core.scraper import MdScraper
 
 def test_single_url_basic():
     """Test basic functionality with a single URL"""

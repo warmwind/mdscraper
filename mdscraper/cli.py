@@ -18,7 +18,7 @@ def create_cli_parser():
     input_group.add_argument('--file', help='Text file containing URLs (one per line) to fetch and convert')
     input_group.add_argument('--site', help='A URL of a page to scrape for URLS to download a site')
 
-    parser.add_argument('--output', default='$TITLE',
+    parser.add_argument('--output', default='%TITLE',
                         help=('Output Markdown file name. Default (%%TITLE) will generate a filename based on '
                               'the Webpage Title. If you prefer to use the URL set this to %%URL. Otherwise, use '
                               'to set as the desired filename'))
