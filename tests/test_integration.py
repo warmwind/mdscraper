@@ -8,24 +8,27 @@ This script provides a quick way to verify that all features are working correct
 
 import os
 import sys
+import argparse
+import time
+
+from mdscraper.core.scraper import MdScraper
 
 # Add the parent directory to the Python path for proper imports
 sys.path.insert(0, os.path.abspath(os.path.dirname(os.path.dirname(__file__))))
-
-import argparse
-import time
-from mdscraper.core.scraper import process_single_url, process_url_file
 
 def test_single_url_basic():
     """Test basic functionality with a single URL"""
     print("\n=== Testing basic functionality with Python.org ===")
     url = "https://www.python.org/doc/"
     output_file = "python_basic.md"
-    
+
+    # Create a MD Scraper object with default options
+    mds = MdScraper()
+
     if os.path.exists(output_file):
         os.remove(output_file)
-    
-    result = process_single_url(url, output_file)
+
+    result = mds.process_single_url(url, output_file)
     if result and os.path.exists(output_file):
         print(f"✅ Basic functionality test PASSED. Output saved to {output_file}")
         return True
@@ -38,14 +41,18 @@ def test_single_url_no_images():
     print("\n=== Testing with images removed ===")
     url = "https://www.python.org/doc/"
     output_file = "python_without_images.md"
-    
+
+    # Create a MD Scraper object
+    mds = MdScraper()
+    mds.options['no_images'] = True
+
     if os.path.exists(output_file):
         os.remove(output_file)
-    
-    result = process_single_url(url, output_file, ignore_images=True)
+
+    result = mds.process_single_url(url, output_file)
     if result and os.path.exists(output_file):
         print(f"✅ No images test PASSED. Output saved to {output_file}")
-        
+
         # Basic validation - check if markdown image tags are absent
         with open(output_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -62,14 +69,18 @@ def test_single_url_no_links():
     print("\n=== Testing with links removed ===")
     url = "https://www.python.org/doc/"
     output_file = "python_no_links.md"
-    
+
+    # Create a MD Scraper object
+    mds = MdScraper()
+    mds.options['no_links'] = True
+
     if os.path.exists(output_file):
         os.remove(output_file)
-    
-    result = process_single_url(url, output_file, ignore_links=True)
+
+    result = mds.process_single_url(url, output_file)
     if result and os.path.exists(output_file):
         print(f"✅ No links test PASSED. Output saved to {output_file}")
-        
+
         # Basic validation - check if markdown link tags are absent
         with open(output_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -87,14 +98,18 @@ def test_single_url_with_heading_space():
     print("\n=== Testing with extra heading space ===")
     url = "https://www.python.org/doc/"
     output_file = "python_with_headings.md"
-    
+
+    # Create a MD Scraper object
+    mds = MdScraper()
+    mds.options['extra_heading_space'] = "all"
+
     if os.path.exists(output_file):
         os.remove(output_file)
-    
-    result = process_single_url(url, output_file, extra_heading_space="all")
+
+    result = mds.process_single_url(url, output_file)
     if result and os.path.exists(output_file):
         print(f"✅ Extra heading space test PASSED. Output saved to {output_file}")
-        
+
         # Validate that consecutive headings have extra spacing
         with open(output_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -103,7 +118,7 @@ def test_single_url_with_heading_space():
             for i, line in enumerate(lines):
                 if line.startswith('#') and len(line) > 1 and line[1] in [' ', '#']:
                     heading_lines.append(i)
-            
+
             # Check spacing between consecutive headings
             for i in range(1, len(heading_lines)):
                 curr_heading = heading_lines[i]
@@ -119,20 +134,23 @@ def test_single_url_with_heading_space():
 def test_multiple_urls():
     """Test processing multiple URLs from a file"""
     print("\n=== Testing multiple URLs processing ===")
-    
+
     # Create a sample URL file
     url_file = "sample_urls.txt"
     with open(url_file, 'w', encoding='utf-8') as f:
         f.write("https://www.python.org/doc/\n")
         f.write("https://docs.python.org/3/library/index.html\n")
-    
+
     output_dir = "test_batch_output"
     if os.path.exists(output_dir):
         import shutil
         shutil.rmtree(output_dir)
-    
-    process_url_file(url_file, output_dir=output_dir)
-    
+
+    # Create a MD Scraper object with default options
+    mds = MdScraper()
+
+    mds.process_url_file(url_file, output_dir=output_dir)
+
     if os.path.exists(output_dir) and len(os.listdir(output_dir)) > 0:
         print(f"✅ Multiple URLs test PASSED. Outputs saved to {output_dir}/")
         return True
@@ -145,14 +163,20 @@ def test_combined_features():
     print("\n=== Testing combined features (no images, no links, heading space) ===")
     url = "https://www.python.org/doc/"
     output_file = "python_combined.md"
-    
+
     if os.path.exists(output_file):
         os.remove(output_file)
-    
-    result = process_single_url(url, output_file, ignore_images=True, ignore_links=True, extra_heading_space="2,3")
+
+    # Create a MD Scraper object and set options
+    mds = MdScraper()
+    mds.options['no_images'] = True
+    mds.options['no_links'] = True
+    mds.options['extra_heading_space'] = "2,3"
+
+    result = mds.process_single_url(url, output_file)
     if result and os.path.exists(output_file):
         print(f"✅ Combined features test PASSED. Output saved to {output_file}")
-        
+
         # Validate combined features
         with open(output_file, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -170,18 +194,22 @@ def test_combined_features():
 def test_empty_paragraphs():
     """Test that the image removal doesn't leave empty paragraphs"""
     print("\n=== Testing image removal with empty paragraphs ===")
-    
+
     # Use a URL known to have images with empty paragraphs
     url = "https://docs.python.org/3/tutorial/index.html"
     output_with_images = "python_docs_with_images.md"
     output_without_images = "python_docs_without_images.md"
-    
+
+    # Create a MD Scraper object with default options
+    mds = MdScraper()
+
     # First fetch with images
-    process_single_url(url, output_with_images)
-    
+    mds.process_single_url(url, output_with_images)
+
     # Then fetch without images
-    process_single_url(url, output_without_images, ignore_images=True)
-    
+    mds.options['no_images'] = True
+    mds.process_single_url(url, output_without_images)
+
     if os.path.exists(output_with_images) and os.path.exists(output_without_images):
         # Compare both files to see if there are excessive empty lines
         with open(output_without_images, 'r', encoding='utf-8') as f:
@@ -199,9 +227,9 @@ def main():
     parser = argparse.ArgumentParser(description='Integration tests for MDScraper')
     parser.add_argument('--test', choices=['all', 'basic', 'images', 'links', 'headings', 'batch', 'combined', 'empty'],
                        help='Specific test to run', default='all')
-    
+
     args = parser.parse_args()
-    
+
     all_tests = {
         'basic': test_single_url_basic,
         'images': test_single_url_no_images,
@@ -211,13 +239,13 @@ def main():
         'combined': test_combined_features,
         'empty': test_empty_paragraphs
     }
-    
+
     start_time = time.time()
-    
+
     if args.test == 'all':
         print("Running all integration tests...")
         results = []
-        
+
         for test_name, test_func in all_tests.items():
             print(f"\nRunning test: {test_name}")
             try:
@@ -226,7 +254,7 @@ def main():
             except Exception as e:
                 print(f"Error in test {test_name}: {e}")
                 results.append((test_name, False))
-        
+
         # Print summary
         print("\n=== Test Summary ===")
         success_count = sum(1 for _, r in results if r)
@@ -234,10 +262,10 @@ def main():
         for test_name, result in results:
             status = "✅ PASS" if result else "❌ FAIL"
             print(f"{status} - {test_name}")
-        
+
         print(f"\nResult: {success_count}/{total} tests passed")
         print(f"Time taken: {time.time() - start_time:.2f} seconds")
-        
+
         if success_count < total:
             return 1
     else:
@@ -247,8 +275,8 @@ def main():
         else:
             print(f"Unknown test: {args.test}")
             return 1
-    
+
     return 0
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())
